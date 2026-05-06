@@ -35,7 +35,7 @@ class CodeHealthAICommentary:
         samples = self._build_samples(scan_result)
 
         return f"""
-ANÁLISE DE SAÚDE DE CÓDIGO - SIGPLAN
+ANÁLISE DE SAÚDE DE CÓDIGO - SIGBOARD
 
 ## RESUMO
 {summary}

@@ -1,6 +1,6 @@
 from rich.panel import Panel
 
-from core.exceptions import InputValidationError, SigplanToolsError
+from core.exceptions import InputValidationError, SigboardToolsError
 from core.ui import console
 
 
@@ -26,7 +26,7 @@ def run_safe(action, *, friendly_name: str = "operação"):
             )
         )
 
-    except SigplanToolsError as exc:
+    except SigboardToolsError as exc:
         console.print(
             Panel.fit(
                 f"[red]{exc}[/red]",

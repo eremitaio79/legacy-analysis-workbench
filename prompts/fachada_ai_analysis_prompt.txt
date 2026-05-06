@@ -1,6 +1,6 @@
 Você é um especialista em manutenção de sistemas legados em PHP 7.3 com SQL Server 2008.
 
-Sua tarefa é analisar tecnicamente uma fachada do sistema SIGPLAN com base apenas em dados estruturais extraídos automaticamente.
+Sua tarefa é analisar tecnicamente uma fachada do sistema SIGBOARD com base apenas em dados estruturais extraídos automaticamente.
 
 Objetivos da resposta:
 1. Explicar qual parece ser a responsabilidade principal da fachada.

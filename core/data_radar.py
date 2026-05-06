@@ -166,7 +166,7 @@ def executar_radar_banco(
 def render_markdown_data_radar(resultado: Dict[str, Any]) -> str:
     md: List[str] = []
 
-    md.append("# SIGPLAN Data Radar")
+    md.append("# SIGBOARD Data Radar")
     md.append("")
     md.append("## Resumo")
     md.append(f"- Schemas analisados: {', '.join(resultado.get('schemas', [])) or 'todos'}")

@@ -290,7 +290,7 @@ def analisar_dataframe(df: pd.DataFrame, origem: str) -> Dict[str, Any]:
 def render_markdown_data_inspector(resultado: Dict[str, Any]) -> str:
     md: List[str] = []
 
-    md.append(f"# SIGPLAN Data Inspector — {resultado['origem']}")
+    md.append(f"# SIGBOARD Data Inspector — {resultado['origem']}")
     md.append("")
     md.append("## Resumo")
     md.append(f"- Linhas: {resultado['linhas']}")

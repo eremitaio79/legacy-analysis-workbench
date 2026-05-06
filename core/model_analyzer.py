@@ -72,7 +72,7 @@ class ModelAnalysisResult:
 
 class ModelAnalyzer:
     """
-    Analisador de models do SIGPLAN.
+    Analisador de models do SIGBOARD.
 
     Entradas suportadas:
     - nome da classe/model: ex. Acaodetalhada

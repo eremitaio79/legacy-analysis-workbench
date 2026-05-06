@@ -36,7 +36,7 @@ from core.deps_writer import salvar_relatorio_dependencias
 from core.class_resolver import resolver_chamadas_externas
 from core.include_resolver import resolver_includes
 from core.tree_builder import construir_arvore_dependencias
-from core.url_parser import parse_sigplan_url
+from core.url_parser import parse_sigboard_url
 from core.ai_analyzer import (
     AIAnalysisInput,
     GeminiAnalyzer,
@@ -44,17 +44,17 @@ from core.ai_analyzer import (
 )
 
 from core.config import (
-    SIGPLAN_PROJECT_PATH,
-    SIGPLAN_OUTPUT_DIR,
-    SIGPLAN_REPORT_DIR,
-    SIGPLAN_DEFAULT_MD_NAME,
-    SIGPLAN_AI_PROVIDER,
-    SIGPLAN_AI_MODEL,
-    SIGPLAN_AI_PROMPT_FILE,
-    SIGPLAN_DEFAULT_DEEP,
-    SIGPLAN_DEFAULT_CONTEXTO,
-    SIGPLAN_AI_CACHE_ENABLED,
-    SIGPLAN_AI_CACHE_DIR,
+    SIGBOARD_PROJECT_PATH,
+    SIGBOARD_OUTPUT_DIR,
+    SIGBOARD_REPORT_DIR,
+    SIGBOARD_DEFAULT_MD_NAME,
+    SIGBOARD_AI_PROVIDER,
+    SIGBOARD_AI_MODEL,
+    SIGBOARD_AI_PROMPT_FILE,
+    SIGBOARD_DEFAULT_DEEP,
+    SIGBOARD_DEFAULT_CONTEXTO,
+    SIGBOARD_AI_CACHE_ENABLED,
+    SIGBOARD_AI_CACHE_DIR,
 )
 
 from core.include_analyzer import (
@@ -126,18 +126,18 @@ from core.db_connector import get_connection
 from core.procedure_analyzer import ProcedureAnalyzer
 from core.procedure_writer import ProcedureWriter
 
-from core.config import SIGPLAN_DB_ACTIVE
+from core.config import SIGBOARD_DB_ACTIVE
 
 from core.db_connector import get_connection, get_connection_info
 
-from core.config import SIGPLAN_OUTPUT_DIR, SIGPLAN_REPORT_DIR
+from core.config import SIGBOARD_OUTPUT_DIR, SIGBOARD_REPORT_DIR
 
 from core.procedure_ai_commentary import generate_procedure_ai_commentary
 
 from core.ui import _renderizar_sobre, _limpar_tela
 
 from core.action_runner import run_safe
-from core.exceptions import RequiredInputError, SigplanToolsError
+from core.exceptions import RequiredInputError, SigboardToolsError
 from core.input_utils import normalize_menu_option, require_non_empty
 
 from core.code_health_ai_commentary import CodeHealthAICommentary
@@ -162,8 +162,8 @@ from core.ui_flow_analyzer import UIFlowAnalyzer
 from core.action_trace_analyzer import ActionTraceAnalyzer
 from core.ui_flow_ai_commentary import UIFlowAICommentary
 
-current_db_env = SIGPLAN_DB_ACTIVE
-CURRENT_AI_MODEL = SIGPLAN_AI_MODEL
+current_db_env = SIGBOARD_DB_ACTIVE
+CURRENT_AI_MODEL = SIGBOARD_AI_MODEL
 
 app = typer.Typer(help="AI-assisted tools for legacy system analysis.")
 console = Console()
@@ -286,7 +286,7 @@ def _data_inspector_schema_semantico_json(current_db_env: str):
         analyzer = SchemaSemanticAnalyzer(schema_data)
         result = analyzer.analyze()
 
-    # output_dir = Path(SIGPLAN_OUTPUT_DIR) / SIGPLAN_REPORT_DIR / "schema_semantic"
+    # output_dir = Path(SIGBOARD_OUTPUT_DIR) / SIGBOARD_REPORT_DIR / "schema_semantic"
     output_dir = Path("reports/schema_semantic")
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -683,17 +683,17 @@ def _salvar_modelo_no_env(novo_modelo: str):
 
     conteudo = env_path.read_text(encoding="utf-8", errors="ignore")
 
-    if re.search(r"^SIGPLAN_AI_MODEL=", conteudo, flags=re.MULTILINE):
+    if re.search(r"^SIGBOARD_AI_MODEL=", conteudo, flags=re.MULTILINE):
         conteudo = re.sub(
-            r"^SIGPLAN_AI_MODEL=.*$",
-            f"SIGPLAN_AI_MODEL={novo_modelo}",
+            r"^SIGBOARD_AI_MODEL=.*$",
+            f"SIGBOARD_AI_MODEL={novo_modelo}",
             conteudo,
             flags=re.MULTILINE,
         )
     else:
         if not conteudo.endswith("\n"):
             conteudo += "\n"
-        conteudo += f"SIGPLAN_AI_MODEL={novo_modelo}\n"
+        conteudo += f"SIGBOARD_AI_MODEL={novo_modelo}\n"
 
     env_path.write_text(conteudo, encoding="utf-8")
     console.print("[bold green]✔ Modelo salvo no .env com sucesso.[/bold green]")
@@ -771,19 +771,19 @@ def run_procedure_analysis_with_ai(procedure_name: str, environment: str) -> Non
             analysis = analyzer.analyze(procedure_name)
 
             if not analysis:
-                raise SigplanToolsError("Nenhuma análise foi retornada para a procedure informada.")
+                raise SigboardToolsError("Nenhuma análise foi retornada para a procedure informada.")
 
         with ui.status("[bold magenta]Interpretando comportamento com IA...[/bold magenta]"):
             ai_commentary = generate_procedure_ai_commentary(
                 analysis=analysis,
-                provider=SIGPLAN_AI_PROVIDER,
+                provider=SIGBOARD_AI_PROVIDER,
                 model=CURRENT_AI_MODEL,
                 prompt_file="procedure_ai_analysis_prompt.txt",
                 prefer_cache=True,
             )
 
         if not ai_commentary or not str(ai_commentary).strip():
-            raise SigplanToolsError("A IA não retornou comentário técnico para a procedure.")
+            raise SigboardToolsError("A IA não retornou comentário técnico para a procedure.")
 
         analysis["ai_commentary"] = ai_commentary
 
@@ -851,12 +851,12 @@ def run_procedure_analysis(procedure_name: str, environment: str = "homolog") ->
             conn = get_connection(environment=environment)
 
             analyzer = ProcedureAnalyzer(connection=conn, environment=environment)
-            writer = ProcedureWriter(output_dir=Path(SIGPLAN_OUTPUT_DIR) / SIGPLAN_REPORT_DIR / "procedures")
+            writer = ProcedureWriter(output_dir=Path(SIGBOARD_OUTPUT_DIR) / SIGBOARD_REPORT_DIR / "procedures")
 
             analysis = analyzer.analyze(procedure_name)
 
             if not analysis:
-                raise SigplanToolsError("Nenhuma análise foi retornada para a procedure informada.")
+                raise SigboardToolsError("Nenhuma análise foi retornada para a procedure informada.")
 
             output_path = writer.write(analysis)
 
@@ -1019,7 +1019,7 @@ def _imprimir_resultado_data_radar(resultado: dict):
         f"[bold]Total de tabelas lidas:[/bold] {resultado.get('total_tabelas_lidas', 0)}\n"
         f"[bold]Sucesso:[/bold] {resultado.get('total_ok', 0)}\n"
         f"[bold]Erros:[/bold] {resultado.get('total_erros', 0)}",
-        title="📡 SIGPLAN Data Radar",
+        title="📡 SIGBOARD Data Radar",
         expand=False,
         border_style="cyan",
     ))
@@ -1097,7 +1097,7 @@ def _executar_fachada_ai(
         )
 
         if not proceed_with_full_fachada:
-            raise SigplanToolsError("Análise de fachada com IA cancelada pelo usuário.")
+            raise SigboardToolsError("Análise de fachada com IA cancelada pelo usuário.")
 
     result = analyzer.analyze(
         entrada,
@@ -1105,7 +1105,7 @@ def _executar_fachada_ai(
     )
 
     if not result:
-        raise SigplanToolsError(
+        raise SigboardToolsError(
             "Nenhum resultado foi retornado para a análise da fachada com IA."
         )
 
@@ -1132,12 +1132,12 @@ def _executar_fachada_ai(
 
     try:
         gemini = GeminiAnalyzer(
-            provider=SIGPLAN_AI_PROVIDER,
+            provider=SIGBOARD_AI_PROVIDER,
             model=CURRENT_AI_MODEL,
-            prompt_file=SIGPLAN_AI_PROMPT_FILE,
+            prompt_file=SIGBOARD_AI_PROMPT_FILE,
         )
     except GeminiAnalyzerError as exc:
-        raise SigplanToolsError(f"Erro ao inicializar IA: {exc}") from exc
+        raise SigboardToolsError(f"Erro ao inicializar IA: {exc}") from exc
 
     commentary_service = FachadaAICommentary(
         analyzer=gemini,
@@ -1154,15 +1154,15 @@ def _executar_fachada_ai(
             include_sql_snippets=True,
         )
     except GeminiAnalyzerError as exc:
-        raise SigplanToolsError(f"Falha na análise IA da fachada: {exc}") from exc
+        raise SigboardToolsError(f"Falha na análise IA da fachada: {exc}") from exc
 
     if not ai_commentary or not str(ai_commentary).strip():
-        raise SigplanToolsError("A IA não retornou comentário técnico para a fachada.")
+        raise SigboardToolsError("A IA não retornou comentário técnico para a fachada.")
 
     fallback_nome = f"fachada_ai_{result.class_name or 'analise'}"
     nome_base = _normalizar_nome_relatorio(out, fallback=fallback_nome)
 
-    pasta_saida = Path(SIGPLAN_OUTPUT_DIR) / SIGPLAN_REPORT_DIR
+    pasta_saida = Path(SIGBOARD_OUTPUT_DIR) / SIGBOARD_REPORT_DIR
     pasta_saida.mkdir(parents=True, exist_ok=True)
 
     arquivo_resumido = pasta_saida / f"{nome_base}_resumido.md"
@@ -1216,13 +1216,13 @@ def _executar_model_analyzer(
         resolved_path = analyzer._resolve_target(entrada)
 
     if not resolved_path.exists():
-        raise SigplanToolsError(f"Arquivo não encontrado: {resolved_path}")
+        raise SigboardToolsError(f"Arquivo não encontrado: {resolved_path}")
 
     with ui.status("[bold green]Preparando leitura do model...[/bold green]"):
         result = analyzer.analyze(str(resolved_path))
 
     if not result:
-        raise SigplanToolsError(
+        raise SigboardToolsError(
             "Nenhum resultado foi retornado para a análise do model."
         )
 
@@ -1251,7 +1251,7 @@ def _executar_model_analyzer(
     fallback_nome = f"model_{result.class_name or 'analise'}"
     nome_base = _normalizar_nome_relatorio(out, fallback=fallback_nome)
 
-    pasta_saida = Path(SIGPLAN_OUTPUT_DIR) / SIGPLAN_REPORT_DIR
+    pasta_saida = Path(SIGBOARD_OUTPUT_DIR) / SIGBOARD_REPORT_DIR
     pasta_saida.mkdir(parents=True, exist_ok=True)
 
     arquivo_resumido = pasta_saida / f"{nome_base}_resumido.md"
@@ -1314,7 +1314,7 @@ def _executar_fachada_analyzer(
         )
 
         if not proceed_with_full_fachada:
-            raise SigplanToolsError("Análise de fachada cancelada pelo usuário.")
+            raise SigboardToolsError("Análise de fachada cancelada pelo usuário.")
 
     result = analyzer.analyze(
         entrada,
@@ -1348,7 +1348,7 @@ def _executar_fachada_analyzer(
     fallback_nome = f"fachada_{result.class_name or 'analise'}"
     nome_base = _normalizar_nome_relatorio(out, fallback=fallback_nome)
 
-    pasta_saida = Path(SIGPLAN_OUTPUT_DIR) / SIGPLAN_REPORT_DIR
+    pasta_saida = Path(SIGBOARD_OUTPUT_DIR) / SIGBOARD_REPORT_DIR
     pasta_saida.mkdir(parents=True, exist_ok=True)
 
     arquivo_resumido = pasta_saida / f"{nome_base}_resumido.md"
@@ -1466,7 +1466,7 @@ def _data_inspector_radar_banco(current_db_env: str):
 
     nome_schemas = "_".join(schemas) if schemas else "todos"
     nome_relatorio = f"data_radar_{nome_schemas}.md"
-    caminho_saida = Path(SIGPLAN_OUTPUT_DIR) / SIGPLAN_REPORT_DIR / nome_relatorio
+    caminho_saida = Path(SIGBOARD_OUTPUT_DIR) / SIGBOARD_REPORT_DIR / nome_relatorio
     caminho_saida.parent.mkdir(parents=True, exist_ok=True)
 
     with ui.status("💾 Salvando relatório..."):
@@ -1484,7 +1484,7 @@ def _imprimir_resultado_data_inspector(resultado: dict):
         f"[bold]Origem:[/bold] {resultado['origem']}\n"
         f"[bold]Linhas:[/bold] {resultado['linhas']}\n"
         f"[bold]Colunas:[/bold] {resultado['colunas']}",
-        title="📊 SIGPLAN Data Inspector",
+        title="📊 SIGBOARD Data Inspector",
         expand=False,
         border_style="cyan",
     ))
@@ -1570,7 +1570,7 @@ def _data_inspector_perfil_tabela(current_db_env: str):
     with ui.status("📝 Gerando relatório Markdown..."):
         md = render_markdown_data_inspector(resultado)
 
-    caminho_saida = Path(SIGPLAN_OUTPUT_DIR) / SIGPLAN_REPORT_DIR / "data_inspector_tabela.md"
+    caminho_saida = Path(SIGBOARD_OUTPUT_DIR) / SIGBOARD_REPORT_DIR / "data_inspector_tabela.md"
     caminho_saida.parent.mkdir(parents=True, exist_ok=True)
 
     with ui.status("💾 Salvando relatório..."):
@@ -1598,7 +1598,7 @@ def _data_inspector_perfil_query():
     with ui.status("📝 Gerando relatório Markdown..."):
         md = render_markdown_data_inspector(resultado)
 
-    caminho_saida = Path(SIGPLAN_OUTPUT_DIR) / SIGPLAN_REPORT_DIR / "data_inspector_query.md"
+    caminho_saida = Path(SIGBOARD_OUTPUT_DIR) / SIGBOARD_REPORT_DIR / "data_inspector_query.md"
     caminho_saida.parent.mkdir(parents=True, exist_ok=True)
 
     with ui.status("💾 Salvando relatório..."):
@@ -1626,7 +1626,7 @@ def _data_inspector_perfil_query(current_db_env: str):
     with ui.status("📝 Gerando relatório Markdown..."):
         md = render_markdown_data_inspector(resultado)
 
-    caminho_saida = Path(SIGPLAN_OUTPUT_DIR) / SIGPLAN_REPORT_DIR / "data_inspector_query.md"
+    caminho_saida = Path(SIGBOARD_OUTPUT_DIR) / SIGBOARD_REPORT_DIR / "data_inspector_query.md"
     caminho_saida.parent.mkdir(parents=True, exist_ok=True)
 
     with ui.status("💾 Salvando relatório..."):
@@ -1650,7 +1650,7 @@ def _data_inspector_estrutura_tabela(current_db_env: str):
         md = render_markdown_schema_inspector(resultado)
 
     nome_relatorio = f"schema_{tabela.replace('.', '_')}.md"
-    caminho_saida = Path(SIGPLAN_OUTPUT_DIR) / SIGPLAN_REPORT_DIR / nome_relatorio
+    caminho_saida = Path(SIGBOARD_OUTPUT_DIR) / SIGBOARD_REPORT_DIR / nome_relatorio
     caminho_saida.parent.mkdir(parents=True, exist_ok=True)
 
     with ui.status("💾 Salvando relatório..."):
@@ -1707,7 +1707,7 @@ def _data_inspector_estrutura_ia(current_db_env: str):
     ])
 
     nome_relatorio = f"schema_ai_{tabela.replace('.', '_')}.md"
-    caminho_saida = Path(SIGPLAN_OUTPUT_DIR) / SIGPLAN_REPORT_DIR / nome_relatorio
+    caminho_saida = Path(SIGBOARD_OUTPUT_DIR) / SIGBOARD_REPORT_DIR / nome_relatorio
     caminho_saida.parent.mkdir(parents=True, exist_ok=True)
 
     with ui.status("💾 Salvando relatório final..."):
@@ -1746,7 +1746,7 @@ def _data_inspector_anomalias(current_db_env: str):
         md = render_markdown_anomalias(resultado)
 
     nome_relatorio = f"anomalias_{tabela.replace('.', '_')}.md"
-    caminho_saida = Path(SIGPLAN_OUTPUT_DIR) / SIGPLAN_REPORT_DIR / nome_relatorio
+    caminho_saida = Path(SIGBOARD_OUTPUT_DIR) / SIGBOARD_REPORT_DIR / nome_relatorio
     caminho_saida.parent.mkdir(parents=True, exist_ok=True)
 
     with ui.status("💾 Salvando relatório..."):
@@ -1806,7 +1806,7 @@ def _data_inspector_anomalias_ia(current_db_env: str):
     ])
 
     nome_relatorio = f"anomalias_ai_{tabela.replace('.', '_')}.md"
-    caminho_saida = Path(SIGPLAN_OUTPUT_DIR) / SIGPLAN_REPORT_DIR / nome_relatorio
+    caminho_saida = Path(SIGBOARD_OUTPUT_DIR) / SIGBOARD_REPORT_DIR / nome_relatorio
     caminho_saida.parent.mkdir(parents=True, exist_ok=True)
 
     with ui.status("💾 Salvando relatório final..."):
@@ -1829,13 +1829,13 @@ def _executar_data_inspector(current_db_env: str):
         info.add_column(style="green", justify="right")
         info.add_column(style="white")
 
-        info.add_row("Projeto", SIGPLAN_PROJECT_PATH)
+        info.add_row("Projeto", SIGBOARD_PROJECT_PATH)
         info.add_row("Banco ativo", _format_db_env_label(current_db_env))
 
         console.print(
             Panel(
                 info,
-                title="📊 SIGPLAN DATA INSPECTOR",
+                title="📊 SIGBOARD DATA INSPECTOR",
                 border_style="green",
                 expand=False,
             )
@@ -1989,9 +1989,9 @@ def _montar_caminho_relatorio(nome_arquivo: str) -> str:
     if nome_path.is_absolute():
         caminho_final = nome_path
     elif nome_path.parent != Path("."):
-        caminho_final = Path(SIGPLAN_OUTPUT_DIR) / nome_path
+        caminho_final = Path(SIGBOARD_OUTPUT_DIR) / nome_path
     else:
-        caminho_final = Path(SIGPLAN_OUTPUT_DIR) / SIGPLAN_REPORT_DIR / nome_arquivo
+        caminho_final = Path(SIGBOARD_OUTPUT_DIR) / SIGBOARD_REPORT_DIR / nome_arquivo
 
     if caminho_final.suffix.lower() != ".md":
         caminho_final = caminho_final.with_suffix(".md")
@@ -2005,20 +2005,20 @@ def _montar_caminho_relatorio(nome_arquivo: str) -> str:
 
 def _executar_include_script_analyzer():
     console.print(f"\n[bold cyan]📜 INCLUDE SCRIPT ANALYZER[/bold cyan]")
-    console.print(f"[cyan]Projeto:[/cyan] {SIGPLAN_PROJECT_PATH}\n")
+    console.print(f"[cyan]Projeto:[/cyan] {SIGBOARD_PROJECT_PATH}\n")
 
     entrada = require_non_empty(
         Prompt.ask("[bold]Informe o caminho do arquivo include .php[/bold]"),
         "Informe o caminho do arquivo include .php."
     )
 
-    caminho_completo = _resolver_caminho_include_direto(SIGPLAN_PROJECT_PATH, entrada)
+    caminho_completo = _resolver_caminho_include_direto(SIGBOARD_PROJECT_PATH, entrada)
 
     if not caminho_completo.exists():
-        raise SigplanToolsError(f"Arquivo não encontrado: {caminho_completo}")
+        raise SigboardToolsError(f"Arquivo não encontrado: {caminho_completo}")
 
     if not caminho_completo.is_file():
-        raise SigplanToolsError(f"O caminho informado não é um arquivo: {caminho_completo}")
+        raise SigboardToolsError(f"O caminho informado não é um arquivo: {caminho_completo}")
 
     console.print(f"[cyan]Arquivo selecionado:[/cyan] {caminho_completo}")
 
@@ -2026,7 +2026,7 @@ def _executar_include_script_analyzer():
         resultado = analisar_include_script(caminho_completo)
 
     if not resultado:
-        raise SigplanToolsError("Não foi possível analisar o arquivo.")
+        raise SigboardToolsError("Não foi possível analisar o arquivo.")
 
     origem = str(caminho_completo)
 
@@ -2034,7 +2034,7 @@ def _executar_include_script_analyzer():
         md = render_markdown_include_script(resultado, origem=origem)
 
     try:
-        rel_path = caminho_completo.relative_to(Path(SIGPLAN_PROJECT_PATH))
+        rel_path = caminho_completo.relative_to(Path(SIGBOARD_PROJECT_PATH))
         nome_relatorio = f"include_script_{str(rel_path)}.md"
     except Exception:
         nome_base = caminho_completo.name.replace(".php", "")
@@ -2042,7 +2042,7 @@ def _executar_include_script_analyzer():
 
     nome_relatorio = nome_relatorio.replace("/", "_").replace("\\", "_")
 
-    caminho_saida = Path(SIGPLAN_OUTPUT_DIR) / SIGPLAN_REPORT_DIR / nome_relatorio
+    caminho_saida = Path(SIGBOARD_OUTPUT_DIR) / SIGBOARD_REPORT_DIR / nome_relatorio
     caminho_saida.parent.mkdir(parents=True, exist_ok=True)
 
     with ui.status("💾 Salvando relatório Markdown..."):
@@ -2404,26 +2404,26 @@ def _imprimir_resultado_include(resultado_include: dict, origem: str):
 
 def _executar_include_inspector():
     console.print(f"\n[bold cyan]🔎 INCLUDE INSPECTOR[/bold cyan]")
-    console.print(f"[cyan]Projeto:[/cyan] {SIGPLAN_PROJECT_PATH}\n")
+    console.print(f"[cyan]Projeto:[/cyan] {SIGBOARD_PROJECT_PATH}\n")
 
     entrada = require_non_empty(
         Prompt.ask(
-            "[bold]Cole a URL do SIGPLAN, informe Classe.metodo ou caminho de include .php[/bold]"
+            "[bold]Cole a URL do SIGBOARD, informe Classe.metodo ou caminho de include .php[/bold]"
         ),
-        "Informe uma URL do SIGPLAN, Classe.metodo ou caminho de include .php."
+        "Informe uma URL do SIGBOARD, Classe.metodo ou caminho de include .php."
     )
 
     # =========================================================
     # MODO DIRETO: caminho de arquivo include
     # =========================================================
     if _entrada_parece_arquivo_include(entrada):
-        caminho_completo = _resolver_caminho_include_direto(SIGPLAN_PROJECT_PATH, entrada)
+        caminho_completo = _resolver_caminho_include_direto(SIGBOARD_PROJECT_PATH, entrada)
 
         if not caminho_completo.exists():
-            raise SigplanToolsError(f"Arquivo não encontrado: {caminho_completo}")
+            raise SigboardToolsError(f"Arquivo não encontrado: {caminho_completo}")
 
         if not caminho_completo.is_file():
-            raise SigplanToolsError(f"O caminho informado não é um arquivo: {caminho_completo}")
+            raise SigboardToolsError(f"O caminho informado não é um arquivo: {caminho_completo}")
 
         console.print(f"[cyan]Modo:[/cyan] análise direta de arquivo include")
         console.print(f"[cyan]Arquivo selecionado:[/cyan] {caminho_completo}")
@@ -2432,7 +2432,7 @@ def _executar_include_inspector():
             resultado_include = analisar_arquivo_include(caminho_completo)
 
         if not resultado_include:
-            raise SigplanToolsError("Não foi possível analisar o arquivo.")
+            raise SigboardToolsError("Não foi possível analisar o arquivo.")
 
         origem = str(caminho_completo)
 
@@ -2443,7 +2443,7 @@ def _executar_include_inspector():
             )
 
         try:
-            rel_path = caminho_completo.relative_to(Path(SIGPLAN_PROJECT_PATH))
+            rel_path = caminho_completo.relative_to(Path(SIGBOARD_PROJECT_PATH))
             nome_relatorio = f"include_direto_{str(rel_path)}.md"
         except Exception:
             nome_base = caminho_completo.name.replace(".php", "")
@@ -2451,7 +2451,7 @@ def _executar_include_inspector():
 
         nome_relatorio = nome_relatorio.replace("/", "_").replace("\\", "_")
 
-        caminho_saida = Path(SIGPLAN_OUTPUT_DIR) / SIGPLAN_REPORT_DIR / nome_relatorio
+        caminho_saida = Path(SIGBOARD_OUTPUT_DIR) / SIGBOARD_REPORT_DIR / nome_relatorio
         caminho_saida.parent.mkdir(parents=True, exist_ok=True)
 
         with ui.status("💾 Salvando relatório Markdown..."):
@@ -2469,25 +2469,25 @@ def _executar_include_inspector():
         interpretado = _interpretar_entrada_deps(entrada)
 
     if not interpretado:
-        raise SigplanToolsError("Não foi possível interpretar a entrada.")
+        raise SigboardToolsError("Não foi possível interpretar a entrada.")
 
     classe = interpretado.get("classe", "").strip()
     metodo = interpretado.get("metodo", "").strip()
     tipo_entrada = interpretado.get("tipo", "").strip()
 
     if tipo_entrada == "vazio":
-        raise RequiredInputError("Informe uma URL do SIGPLAN, Classe.metodo ou caminho de include .php.")
+        raise RequiredInputError("Informe uma URL do SIGBOARD, Classe.metodo ou caminho de include .php.")
 
     if tipo_entrada == "qualificado" and not classe:
-        raise SigplanToolsError("Classe/action não identificada na entrada informada.")
+        raise SigboardToolsError("Classe/action não identificada na entrada informada.")
 
     if not metodo:
-        raise SigplanToolsError("Método não identificado.")
+        raise SigboardToolsError("Método não identificado.")
 
     console.print(f"[cyan]Classe:[/cyan] {classe or '(não identificada)'}")
     console.print(f"[cyan]Método:[/cyan] {metodo}\n")
 
-    project_path = Path(SIGPLAN_PROJECT_PATH)
+    project_path = Path(SIGBOARD_PROJECT_PATH)
 
     with ui.status("📚 Indexando arquivos PHP do projeto..."):
         arquivos_php = list(project_path.rglob("*.php"))
@@ -2507,12 +2507,12 @@ def _executar_include_inspector():
                 break
 
     if not metodo_encontrado:
-        raise SigplanToolsError("Método não encontrado no projeto.")
+        raise SigboardToolsError("Método não encontrado no projeto.")
 
     includes = metodo_encontrado.get("includes", [])
 
     if not includes:
-        raise SigplanToolsError("Nenhum include encontrado neste método.")
+        raise SigboardToolsError("Nenhum include encontrado neste método.")
 
     console.print("[bold]Includes encontrados:[/bold]\n")
 
@@ -2525,7 +2525,7 @@ def _executar_include_inspector():
             console.print(f"[cyan]{i}.[/cyan] {caminho}")
 
     if not includes_paths:
-        raise SigplanToolsError("Nenhum include válido encontrado.")
+        raise SigboardToolsError("Nenhum include válido encontrado.")
 
     escolha = require_non_empty(
         Prompt.ask("\nEscolha o include para analisar", default="1"),
@@ -2536,9 +2536,9 @@ def _executar_include_inspector():
         idx = int(escolha) - 1
         include_path = includes_paths[idx]
     except Exception:
-        raise SigplanToolsError("Escolha inválida.")
+        raise SigboardToolsError("Escolha inválida.")
 
-    caminho_completo = resolver_caminho_include(SIGPLAN_PROJECT_PATH, include_path)
+    caminho_completo = resolver_caminho_include(SIGBOARD_PROJECT_PATH, include_path)
 
     console.print(f"\n[cyan]Arquivo selecionado:[/cyan] {caminho_completo}")
 
@@ -2546,7 +2546,7 @@ def _executar_include_inspector():
         resultado_include = analisar_arquivo_include(caminho_completo)
 
     if not resultado_include:
-        raise SigplanToolsError("Não foi possível analisar o arquivo.")
+        raise SigboardToolsError("Não foi possível analisar o arquivo.")
 
     origem = f"{classe}.{metodo}" if classe else metodo
 
@@ -2559,7 +2559,7 @@ def _executar_include_inspector():
     nome_relatorio = f"include_{classe}_{metodo}.md" if classe else f"include_{metodo}.md"
     nome_relatorio = nome_relatorio.replace("/", "_").replace("\\", "_")
 
-    caminho_saida = Path(SIGPLAN_OUTPUT_DIR) / SIGPLAN_REPORT_DIR / nome_relatorio
+    caminho_saida = Path(SIGBOARD_OUTPUT_DIR) / SIGBOARD_REPORT_DIR / nome_relatorio
     caminho_saida.parent.mkdir(parents=True, exist_ok=True)
 
     with ui.status("💾 Salvando relatório Markdown..."):
@@ -2577,10 +2577,10 @@ def _pedir_nome_relatorio(label: str = "📝 Nome do relatório Markdown (sem ca
 
 def _debug_caminhos():
     console.print("\n[bold cyan]DEBUG DE CAMINHOS[/bold cyan]")
-    console.print(f"SIGPLAN_PROJECT_PATH = {SIGPLAN_PROJECT_PATH}")
-    console.print(f"SIGPLAN_OUTPUT_DIR   = {SIGPLAN_OUTPUT_DIR}")
-    console.print(f"SIGPLAN_REPORT_DIR   = {SIGPLAN_REPORT_DIR}")
-    console.print(f"Relatórios           = {Path(SIGPLAN_OUTPUT_DIR) / SIGPLAN_REPORT_DIR}")
+    console.print(f"SIGBOARD_PROJECT_PATH = {SIGBOARD_PROJECT_PATH}")
+    console.print(f"SIGBOARD_OUTPUT_DIR   = {SIGBOARD_OUTPUT_DIR}")
+    console.print(f"SIGBOARD_REPORT_DIR   = {SIGBOARD_REPORT_DIR}")
+    console.print(f"Relatórios           = {Path(SIGBOARD_OUTPUT_DIR) / SIGBOARD_REPORT_DIR}")
 
 
 def _limpar_tela():
@@ -2658,7 +2658,7 @@ def _listar_modelos_por_provider(provider: str) -> list[str]:
 
 def _pedir_provider_ia() -> str:
     providers = _listar_providers_disponiveis()
-    provider_padrao = SIGPLAN_AI_PROVIDER if SIGPLAN_AI_PROVIDER in providers else providers[0]
+    provider_padrao = SIGBOARD_AI_PROVIDER if SIGBOARD_AI_PROVIDER in providers else providers[0]
 
     console.print("\n[bold]🤖 Provider de IA:[/bold]")
     for idx, item in enumerate(providers, start=1):
@@ -2735,7 +2735,7 @@ def _pedir_prompt_ia() -> str:
         console.print("[yellow]Nenhum prompt disponível em /prompts. Será usado o padrão configurado.[/yellow]")
         return "ai_analysis_prompt.txt"
 
-    prompt_padrao = SIGPLAN_AI_PROMPT_FILE if SIGPLAN_AI_PROMPT_FILE in prompts else prompts[0]
+    prompt_padrao = SIGBOARD_AI_PROMPT_FILE if SIGBOARD_AI_PROMPT_FILE in prompts else prompts[0]
 
     console.print("\n[bold]📜 Prompt de análise:[/bold]")
     for idx, item in enumerate(prompts, start=1):
@@ -2761,7 +2761,7 @@ def _completar_entrada_deps(entrada: str) -> str:
 
     if not entrada:
         raise RequiredInputError(
-            "Informe um método, action.método ou URL do SIGPLAN."
+            "Informe um método, action.método ou URL do SIGBOARD."
         )
 
     # Se já veio URL, mantém
@@ -2781,7 +2781,7 @@ def _completar_entrada_deps(entrada: str) -> str:
     # Veio só o nome do método -> pedir classe/action
     console.print("\n[yellow]Foi informado apenas o nome do método.[/yellow]")
     console.print(
-        "[yellow]Como existem métodos repetidos no SIGPLAN, informe a classe/action de origem.[/yellow]"
+        "[yellow]Como existem métodos repetidos no SIGBOARD, informe a classe/action de origem.[/yellow]"
     )
 
     classe = require_non_empty(
@@ -2815,7 +2815,7 @@ def _interpretar_entrada_ai(entrada: str) -> dict:
     )
 
     if parece_url:
-        dados_url = parse_sigplan_url(entrada) or {}
+        dados_url = parse_sigboard_url(entrada) or {}
 
         return {
             "tipo": "url",
@@ -2859,7 +2859,7 @@ def _executar_scan(path: str):
         arquivos = listar_php(path)
 
     if not arquivos:
-        raise SigplanToolsError("Nenhum arquivo PHP foi encontrado no projeto.")
+        raise SigboardToolsError("Nenhum arquivo PHP foi encontrado no projeto.")
 
     resultados = []
     total = len(arquivos)
@@ -2989,7 +2989,7 @@ def _executar_scan(path: str):
 
             try:
                 gemini = GeminiAnalyzer(
-                    provider=SIGPLAN_AI_PROVIDER,
+                    provider=SIGBOARD_AI_PROVIDER,
                     model=CURRENT_AI_MODEL,
                     prompt_file="code_health_ai_analysis_prompt.txt",
                 )
@@ -3000,7 +3000,7 @@ def _executar_scan(path: str):
                     ai_text = commentary.generate(resultado_final)
 
                 if not ai_text or not ai_text.strip():
-                    raise SigplanToolsError("A IA não retornou conteúdo para o parecer técnico.")
+                    raise SigboardToolsError("A IA não retornou conteúdo para o parecer técnico.")
 
                 arquivo_ia = Path(pasta_saida) / "20_parecer_tecnico_ia.md"
                 conteudo_md = "\n".join([
@@ -3023,7 +3023,7 @@ def _executar_radar(termo: str, path: str, out: str = "", case_sensitive: bool =
     termo = require_non_empty(termo, "Informe o termo a pesquisar.")
     path = require_non_empty(path, "Caminho do projeto não informado.")
 
-    console.print(f"\n[bold cyan]📡 RADAR SIGPLAN[/bold cyan]")
+    console.print(f"\n[bold cyan]📡 RADAR SIGBOARD[/bold cyan]")
     console.print(f"[cyan]Projeto:[/cyan] {path}")
     console.print(f"[cyan]Termo:[/cyan] {termo}")
     console.print(f"[cyan]Contexto:[/cyan] {contexto} linha(s)\n")
@@ -3127,7 +3127,7 @@ def _interpretar_entrada_deps(entrada: str) -> dict:
         or entrada.startswith("?action=")
         or entrada.startswith("index.php?action=")
     ):
-        dados = parse_sigplan_url(entrada) or {}
+        dados = parse_sigboard_url(entrada) or {}
 
         return {
             "tipo": "url",
@@ -3157,26 +3157,26 @@ def _interpretar_entrada_deps(entrada: str) -> dict:
 def _executar_deps(entrada: str, path: str, out: str = "", deep: int = 1):
     entrada = require_non_empty(
         entrada,
-        "Informe um método, action.método ou URL do SIGPLAN."
+        "Informe um método, action.método ou URL do SIGBOARD."
     )
     path = require_non_empty(path, "Caminho do projeto não informado.")
 
     info = _interpretar_entrada_deps(entrada)
 
     if not info:
-        raise SigplanToolsError("Não foi possível interpretar a entrada informada.")
+        raise SigboardToolsError("Não foi possível interpretar a entrada informada.")
 
     classe = info["classe"]
     metodo = info["metodo"]
 
     if info["tipo"] == "vazio":
-        raise RequiredInputError("Informe um método, action.método ou URL do SIGPLAN.")
+        raise RequiredInputError("Informe um método, action.método ou URL do SIGBOARD.")
 
     if info["tipo"] == "qualificado":
         if not classe:
-            raise SigplanToolsError("Classe/action não informada na entrada qualificada.")
+            raise SigboardToolsError("Classe/action não informada na entrada qualificada.")
         if not metodo:
-            raise SigplanToolsError("Método não informado na entrada qualificada.")
+            raise SigboardToolsError("Método não informado na entrada qualificada.")
 
     console.print(f"\n[bold cyan]🧩 DEPENDÊNCIAS DO MÉTODO[/bold cyan]")
     console.print(f"[cyan]Projeto:[/cyan] {path}")
@@ -3184,7 +3184,7 @@ def _executar_deps(entrada: str, path: str, out: str = "", deep: int = 1):
     if info["tipo"] == "qualificado":
         console.print(f"[cyan]Entrada:[/cyan] {classe}.{metodo}")
     elif info["tipo"] == "url":
-        console.print(f"[cyan]Entrada:[/cyan] URL SIGPLAN")
+        console.print(f"[cyan]Entrada:[/cyan] URL SIGBOARD")
         console.print(f"[cyan]Classe detectada:[/cyan] {classe or '(não identificada)'}")
         console.print(f"[cyan]Método detectado:[/cyan] {metodo or '(não identificado)'}")
     else:
@@ -3193,7 +3193,7 @@ def _executar_deps(entrada: str, path: str, out: str = "", deep: int = 1):
     console.print(f"[cyan]Deep:[/cyan] {deep}\n")
 
     if not metodo:
-        raise SigplanToolsError("Nenhum método foi informado ou identificado.")
+        raise SigboardToolsError("Nenhum método foi informado ou identificado.")
 
     arquivo = None
 
@@ -3205,12 +3205,12 @@ def _executar_deps(entrada: str, path: str, out: str = "", deep: int = 1):
 
             if not arquivo_classe:
                 progress.update(task, completed=1)
-                raise SigplanToolsError(f"Controller/classe '{classe}' não encontrado no projeto.")
+                raise SigboardToolsError(f"Controller/classe '{classe}' não encontrado no projeto.")
 
             dados_teste = analisar_metodo_em_arquivo(arquivo_classe, metodo)
             if not dados_teste:
                 progress.update(task, completed=1)
-                raise SigplanToolsError(
+                raise SigboardToolsError(
                     f"O método '{metodo}' não foi encontrado dentro de '{arquivo_classe.name}'."
                 )
 
@@ -3221,12 +3221,12 @@ def _executar_deps(entrada: str, path: str, out: str = "", deep: int = 1):
         progress.update(task, completed=1)
 
     if not arquivo:
-        raise SigplanToolsError("Método não encontrado no projeto.")
+        raise SigboardToolsError("Método não encontrado no projeto.")
 
     dados = analisar_metodo_em_arquivo(arquivo, metodo)
 
     if not dados:
-        raise SigplanToolsError("Não foi possível analisar o método encontrado.")
+        raise SigboardToolsError("Não foi possível analisar o método encontrado.")
 
     # ================================
     # Resolver includes
@@ -3237,7 +3237,7 @@ def _executar_deps(entrada: str, path: str, out: str = "", deep: int = 1):
     # ================================
     # UI FLOW ANALYZER
     # ================================
-    ui_analyzer = UIFlowAnalyzer(SIGPLAN_PROJECT_PATH)
+    ui_analyzer = UIFlowAnalyzer(SIGBOARD_PROJECT_PATH)
 
     ui_results = []
 
@@ -3676,7 +3676,7 @@ def _executar_deps(entrada: str, path: str, out: str = "", deep: int = 1):
                 gemini = GeminiAnalyzer(
                     provider=provider,
                     model=model,
-                    prompt_file=SIGPLAN_AI_PROMPT_FILE,
+                    prompt_file=SIGBOARD_AI_PROMPT_FILE,
                 )
 
                 commentary_service = UIFlowAICommentary(
@@ -3725,9 +3725,9 @@ def _executar_deps(entrada: str, path: str, out: str = "", deep: int = 1):
 
 
 def _executar_parse_url(entrada: str):
-    dados = parse_sigplan_url(entrada)
+    dados = parse_sigboard_url(entrada)
 
-    console.print("\n[bold cyan]🔍 PARSER DE URL SIGPLAN[/bold cyan]\n")
+    console.print("\n[bold cyan]🔍 PARSER DE URL SIGBOARD[/bold cyan]\n")
     console.print(f"[bold]Action bruta:[/bold] {dados['action_bruta'] or '(vazia)'}")
     console.print(f"[bold]Classe:[/bold] {dados['classe'] or '(não identificada)'}")
     console.print(f"[bold]Método:[/bold] {dados['metodo'] or '(não identificado)'}")
@@ -3758,7 +3758,7 @@ def _montar_ai_input(path: str, metodo: str, url: str, deep: int):
     source_url = (url or "").strip()
 
     if source_url:
-        dados_url = parse_sigplan_url(source_url)
+        dados_url = parse_sigboard_url(source_url)
         classe = (dados_url.get("classe") or "").strip()
         metodo_url = (dados_url.get("metodo") or "").strip()
 
@@ -3849,7 +3849,7 @@ def _executar_ai(
     path = require_non_empty(path, "Caminho do projeto não informado.")
 
     if not (metodo or "").strip() and not (url or "").strip():
-        raise RequiredInputError("Informe um método ou uma URL do SIGPLAN para a análise com IA.")
+        raise RequiredInputError("Informe um método ou uma URL do SIGBOARD para a análise com IA.")
 
     console.print(f"\n[bold cyan]🤖 ANÁLISE INTELIGENTE COM IA[/bold cyan]")
 
@@ -3861,12 +3861,12 @@ def _executar_ai(
     source_url = (url or "").strip()
 
     if source_url:
-        dados_url = parse_sigplan_url(source_url)
+        dados_url = parse_sigboard_url(source_url)
         classe = (dados_url.get("classe") or "").strip()
         metodo_url = (dados_url.get("metodo") or "").strip()
         parametros = dados_url.get("parametros", [])
 
-        console.print(f"[cyan]Entrada detectada:[/cyan] URL SIGPLAN")
+        console.print(f"[cyan]Entrada detectada:[/cyan] URL SIGBOARD")
         console.print(f"[cyan]URL:[/cyan] {source_url}")
         console.print(f"[cyan]Classe detectada:[/cyan] {classe or '(não identificada)'}")
         console.print(f"[cyan]Método detectado:[/cyan] {metodo_url or '(não identificado)'}")
@@ -3895,9 +3895,9 @@ def _executar_ai(
         with ui.status("🧪 Preparando dados da análise..."):
             ai_input = _montar_ai_input(path, metodo, url, deep)
     except GeminiAnalyzerError as exc:
-        raise SigplanToolsError(f"Erro na preparação da análise: {exc}") from exc
+        raise SigboardToolsError(f"Erro na preparação da análise: {exc}") from exc
     except Exception as exc:
-        raise SigplanToolsError(f"Erro inesperado na preparação: {exc}") from exc
+        raise SigboardToolsError(f"Erro inesperado na preparação: {exc}") from exc
 
     try:
         analyzer = GeminiAnalyzer(
@@ -3906,7 +3906,7 @@ def _executar_ai(
             prompt_file=prompt_file,
         )
     except GeminiAnalyzerError as exc:
-        raise SigplanToolsError(f"Erro na configuração da IA: {exc}") from exc
+        raise SigboardToolsError(f"Erro na configuração da IA: {exc}") from exc
 
     if prefer_cache and analyzer.has_cache_for(ai_input):
         console.print("[green]💾 Cache disponível para esta análise.[/green]")
@@ -3917,12 +3917,12 @@ def _executar_ai(
         with ui.status("🧠 Consultando IA / cache..."):
             result = analyzer.analyze(ai_input, prefer_cache=prefer_cache)
     except GeminiAnalyzerError as exc:
-        raise SigplanToolsError(f"Erro na análise IA: {exc}") from exc
+        raise SigboardToolsError(f"Erro na análise IA: {exc}") from exc
     except Exception as exc:
-        raise SigplanToolsError(f"Erro inesperado na análise IA: {exc}") from exc
+        raise SigboardToolsError(f"Erro inesperado na análise IA: {exc}") from exc
 
     if not result:
-        raise SigplanToolsError("A análise IA não retornou resultado.")
+        raise SigboardToolsError("A análise IA não retornou resultado.")
 
     if result.from_cache:
         ui.info("💾 Origem do resultado: CACHE")
@@ -3997,12 +3997,12 @@ def _executar_doctor_ia():
         console.print("[red]✗ GEMINI_API_KEY ausente ou inválida[/red]")
         console.print(f"[yellow]{GeminiAnalyzer.get_api_key_error()}[/yellow]")
 
-    console.print(f"[cyan]Projeto padrão:[/cyan] {SIGPLAN_PROJECT_PATH}")
-    console.print(f"[cyan]Saída padrão:[/cyan] {SIGPLAN_OUTPUT_DIR}")
-    console.print(f"[cyan]Pasta de relatórios:[/cyan] {SIGPLAN_REPORT_DIR}")
+    console.print(f"[cyan]Projeto padrão:[/cyan] {SIGBOARD_PROJECT_PATH}")
+    console.print(f"[cyan]Saída padrão:[/cyan] {SIGBOARD_OUTPUT_DIR}")
+    console.print(f"[cyan]Pasta de relatórios:[/cyan] {SIGBOARD_REPORT_DIR}")
     console.print(f"[cyan]Modelo IA:[/cyan] {CURRENT_AI_MODEL} [bold yellow][a][/bold yellow]")
-    console.print(f"[cyan]Cache habilitado:[/cyan] {'sim' if SIGPLAN_AI_CACHE_ENABLED else 'não'}")
-    console.print(f"[cyan]Diretório de cache:[/cyan] {SIGPLAN_AI_CACHE_DIR}")
+    console.print(f"[cyan]Cache habilitado:[/cyan] {'sim' if SIGBOARD_AI_CACHE_ENABLED else 'não'}")
+    console.print(f"[cyan]Diretório de cache:[/cyan] {SIGBOARD_AI_CACHE_DIR}")
 
     try:
         analyzer = GeminiAnalyzer(model=CURRENT_AI_MODEL)
@@ -4037,12 +4037,12 @@ def _executar_limpar_cache_ia():
 
 @app.command()
 def hello():
-    console.print("[bold green]SIGPLAN Tools funcionando.[/bold green]")
+    console.print("[bold green]SIGBOARD Tools funcionando.[/bold green]")
 
 
 @app.command()
 def scan(
-    path: str = typer.Option(SIGPLAN_PROJECT_PATH, "--path", "-p", help="Caminho do projeto")
+    path: str = typer.Option(SIGBOARD_PROJECT_PATH, "--path", "-p", help="Caminho do projeto")
 ):
     _executar_scan(path)
 
@@ -4050,10 +4050,10 @@ def scan(
 @app.command()
 def radar(
     termo: str,
-    path: str = typer.Option(SIGPLAN_PROJECT_PATH, "--path", "-p", help="Caminho do projeto"),
+    path: str = typer.Option(SIGBOARD_PROJECT_PATH, "--path", "-p", help="Caminho do projeto"),
     out: str = typer.Option("", "--out", "-o", help="Nome do arquivo Markdown (sem caminho)"),
     case_sensitive: bool = typer.Option(False, "--case-sensitive", help="Busca com diferenciação de maiúsculas/minúsculas"),
-    contexto: int = typer.Option(SIGPLAN_DEFAULT_CONTEXTO, "--contexto", "-c", help="Quantidade de linhas antes/depois")
+    contexto: int = typer.Option(SIGBOARD_DEFAULT_CONTEXTO, "--contexto", "-c", help="Quantidade de linhas antes/depois")
 ):
     out_final = _montar_caminho_relatorio(out) if out else ""
     _executar_radar(termo, path, out_final, case_sensitive, contexto)
@@ -4062,9 +4062,9 @@ def radar(
 @app.command()
 def deps(
     entrada: str = typer.Argument(..., help="Método, action.método ou URL"),
-    path: str = typer.Option(SIGPLAN_PROJECT_PATH, "--path", "-p", help="Caminho do projeto"),
+    path: str = typer.Option(SIGBOARD_PROJECT_PATH, "--path", "-p", help="Caminho do projeto"),
     out: str = typer.Option("", "--out", "-o", help="Nome do arquivo Markdown (sem caminho)"),
-    deep: int = typer.Option(SIGPLAN_DEFAULT_DEEP, "--deep", "-d", help="Nível de resolução externa (0, 1 ou 2)")
+    deep: int = typer.Option(SIGBOARD_DEFAULT_DEEP, "--deep", "-d", help="Nível de resolução externa (0, 1 ou 2)")
 ):
     out_final = _montar_caminho_relatorio(out) if out else ""
     _executar_deps(entrada, path, out_final, deep)
@@ -4077,12 +4077,12 @@ def parse_url_cmd(entrada: str):
 
 @app.command()
 def ai(
-    path: str = typer.Option(SIGPLAN_PROJECT_PATH, "--path", "-p", help="Caminho do projeto"),
+    path: str = typer.Option(SIGBOARD_PROJECT_PATH, "--path", "-p", help="Caminho do projeto"),
     metodo: str = typer.Option("", "--metodo", "-m", help="Nome do método"),
-    url: str = typer.Option("", "--url", "-u", help="URL do SIGPLAN para extrair Classe.metodo"),
+    url: str = typer.Option("", "--url", "-u", help="URL do SIGBOARD para extrair Classe.metodo"),
     out: str = typer.Option("", "--out", "-o", help="Nome do arquivo Markdown (sem caminho)"),
-    deep: int = typer.Option(SIGPLAN_DEFAULT_DEEP, "--deep", "-d", help="Nível de resolução externa (0, 1 ou 2)"),
-    provider: str = typer.Option(SIGPLAN_AI_PROVIDER, "--provider", help="Provider de IA"),
+    deep: int = typer.Option(SIGBOARD_DEFAULT_DEEP, "--deep", "-d", help="Nível de resolução externa (0, 1 ou 2)"),
+    provider: str = typer.Option(SIGBOARD_AI_PROVIDER, "--provider", help="Provider de IA"),
     model: str = typer.Option(CURRENT_AI_MODEL, "--model", help="Modelo de IA"),
     prompt_file: str = typer.Option("ai_analysis_prompt.txt", "--prompt-file", help="Arquivo de prompt em /prompts"),
     prefer_cache: bool = typer.Option(True, "--prefer-cache/--force-new", help="Usar cache se existir ou forçar nova análise")
@@ -4120,7 +4120,7 @@ def _status_api_key_text() -> str:
 
 
 def _status_cache_text() -> str:
-    return "[green]ATIVO[/green]" if SIGPLAN_AI_CACHE_ENABLED else "[yellow]DESATIVADO[/yellow]"
+    return "[green]ATIVO[/green]" if SIGBOARD_AI_CACHE_ENABLED else "[yellow]DESATIVADO[/yellow]"
 
 
 def _renderizar_cabecalho_menu():
@@ -4232,10 +4232,10 @@ def _renderizar_status_menu(
     tabela.add_column(style="bold cyan", justify="right")
     tabela.add_column(style="white")
 
-    tabela.add_row("Projeto", SIGPLAN_PROJECT_PATH)
-    tabela.add_row("Provider IA", SIGPLAN_AI_PROVIDER)
+    tabela.add_row("Projeto", SIGBOARD_PROJECT_PATH)
+    tabela.add_row("Provider IA", SIGBOARD_AI_PROVIDER)
     tabela.add_row("Modelo IA", CURRENT_AI_MODEL)
-    tabela.add_row("Prompt", SIGPLAN_AI_PROMPT_FILE)
+    tabela.add_row("Prompt", SIGBOARD_AI_PROMPT_FILE)
     tabela.add_row("Cache", _status_cache_text())
     tabela.add_row("API Key", _status_api_key_text())
     tabela.add_row("Banco", _format_db_env_label(current_db_env))
@@ -4247,7 +4247,7 @@ def _renderizar_status_menu(
     tabela.add_row("Servidor BD", server_display)
 
     tabela.add_row("Database", current_db_database or "-")
-    tabela.add_row("Relatórios", str(Path(SIGPLAN_OUTPUT_DIR) / SIGPLAN_REPORT_DIR))
+    tabela.add_row("Relatórios", str(Path(SIGBOARD_OUTPUT_DIR) / SIGBOARD_REPORT_DIR))
 
     console.print(
         Panel(
@@ -4299,7 +4299,7 @@ def _renderizar_opcoes_menu(current_db_env):
 def _renderizar_rodape_menu():
     console.print(Rule(style="grey50"))
     console.print("[dim]Dica:[/dim] O menu usa automaticamente as configurações do arquivo .env.")
-    console.print("[dim]IA:[/dim] Na opção 5, você pode analisar por URL do SIGPLAN ou pelo nome do método.")
+    console.print("[dim]IA:[/dim] Na opção 5, você pode analisar por URL do SIGBOARD ou pelo nome do método.")
     console.print("[dim]Fachada:[/dim] Na opção F, você pode informar nome da fachada, caminho do arquivo ou Classe.metodo.")
     console.print("[dim]Fachada + IA:[/dim] Na opção G, a ferramenta faz a análise estrutural e gera comentário técnico com IA.")
     console.print("[dim]Model:[/dim] Na opção M, você pode informar nome do model ou caminho do arquivo PHP.")
@@ -4311,7 +4311,7 @@ def _renderizar_rodape_menu():
 
 @app.command()
 def menu():
-    current_db_env = SIGPLAN_DB_ACTIVE
+    current_db_env = SIGBOARD_DB_ACTIVE
     current_db_server, current_db_database, current_db_ip = obter_info_banco(current_db_env)
 
     while True:
@@ -4337,13 +4337,13 @@ def menu():
                     "a", "b", "j", "d", "f", "g", "m", "s", "x"
                 },
             )
-        except (RequiredInputError, SigplanToolsError, Exception) as exc:
+        except (RequiredInputError, SigboardToolsError, Exception) as exc:
             console.print(f"[red]{exc}[/red]")
             _pausar()
             continue
 
         if opcao == "1":
-            run_safe(lambda: _executar_scan(SIGPLAN_PROJECT_PATH), friendly_name="scanner de arquivos PHP")
+            run_safe(lambda: _executar_scan(SIGBOARD_PROJECT_PATH), friendly_name="scanner de arquivos PHP")
             _pausar()
 
         elif opcao == "2":
@@ -4356,10 +4356,10 @@ def menu():
 
                 _executar_radar(
                     termo=termo,
-                    path=SIGPLAN_PROJECT_PATH,
+                    path=SIGBOARD_PROJECT_PATH,
                     out=out,
                     case_sensitive=False,
-                    contexto=SIGPLAN_DEFAULT_CONTEXTO,
+                    contexto=SIGBOARD_DEFAULT_CONTEXTO,
                 )
 
             run_safe(_acao_radar, friendly_name="radar de termos")
@@ -4369,7 +4369,7 @@ def menu():
             def _acao_deps():
                 entrada_deps = require_non_empty(
                     input("Método, action.método ou URL (ex.: preparaLista / PropostaMetaReg.preparaLista): "),
-                    "Informe um método, action.método ou URL do SIGPLAN."
+                    "Informe um método, action.método ou URL do SIGBOARD."
                 )
 
                 entrada_deps = _completar_entrada_deps(entrada_deps)
@@ -4377,9 +4377,9 @@ def menu():
 
                 _executar_deps(
                     entrada=entrada_deps,
-                    path=SIGPLAN_PROJECT_PATH,
+                    path=SIGBOARD_PROJECT_PATH,
                     out=out,
-                    deep=SIGPLAN_DEFAULT_DEEP,
+                    deep=SIGBOARD_DEFAULT_DEEP,
                 )
 
             run_safe(_acao_deps, friendly_name="análise de dependências")
@@ -4396,7 +4396,7 @@ def menu():
 
                 _executar_fachada_analyzer(
                     entrada=entrada_fachada,
-                    path=SIGPLAN_PROJECT_PATH,
+                    path=SIGBOARD_PROJECT_PATH,
                     out=out,
                 )
 
@@ -4418,7 +4418,7 @@ def menu():
 
                 _executar_fachada_ai(
                     entrada=entrada_fachada,
-                    path=SIGPLAN_PROJECT_PATH,
+                    path=SIGBOARD_PROJECT_PATH,
                     out=out,
                 )
 
@@ -4436,7 +4436,7 @@ def menu():
 
                 _executar_model_analyzer(
                     entrada=entrada_model,
-                    path=SIGPLAN_PROJECT_PATH,
+                    path=SIGBOARD_PROJECT_PATH,
                     out=out,
                 )
 
@@ -4444,16 +4444,16 @@ def menu():
             _pausar()
 
         elif opcao == "4":
-            entrada = input("Cole a URL ou query string do SIGPLAN: ").strip()
+            entrada = input("Cole a URL ou query string do SIGBOARD: ").strip()
             _executar_parse_url(entrada)
             analisar = input("\nDeseja rodar deps automaticamente no método encontrado? (s/n): ").strip().lower()
             if analisar == "s":
                 out = _pedir_nome_relatorio()
                 _executar_deps(
                     entrada=entrada,
-                    path=SIGPLAN_PROJECT_PATH,
+                    path=SIGBOARD_PROJECT_PATH,
                     out=out,
-                    deep=SIGPLAN_DEFAULT_DEEP,
+                    deep=SIGBOARD_DEFAULT_DEEP,
                 )
 
             _pausar()
@@ -4465,8 +4465,8 @@ def menu():
 
             def _acao_ai():
                 entrada = require_non_empty(
-                    input("🤖 Cole a URL do SIGPLAN ou informe o nome do método: "),
-                    "Informe uma URL do SIGPLAN ou o nome do método."
+                    input("🤖 Cole a URL do SIGBOARD ou informe o nome do método: "),
+                    "Informe uma URL do SIGBOARD ou o nome do método."
                 )
 
                 interpretado = _interpretar_entrada_ai(entrada)
@@ -4477,7 +4477,7 @@ def menu():
                 metodo = interpretado["metodo"]
 
                 if interpretado["tipo"] == "url":
-                    console.print("\n[bold]Entrada interpretada como URL SIGPLAN:[/bold]")
+                    console.print("\n[bold]Entrada interpretada como URL SIGBOARD:[/bold]")
                     console.print(f"  - Classe: {interpretado['classe'] or '(não identificada)'}")
                     console.print(f"  - Método: {interpretado['metodo'] or '(não identificado)'}")
                     if interpretado["parametros"]:
@@ -4494,14 +4494,14 @@ def menu():
                 out = _pedir_nome_relatorio()
 
                 _executar_ai(
-                    path=SIGPLAN_PROJECT_PATH,
+                    path=SIGBOARD_PROJECT_PATH,
                     metodo=metodo,
                     url=url,
                     out=out,
-                    deep=SIGPLAN_DEFAULT_DEEP,
-                    provider=SIGPLAN_AI_PROVIDER,
+                    deep=SIGBOARD_DEFAULT_DEEP,
+                    provider=SIGBOARD_AI_PROVIDER,
                     model=CURRENT_AI_MODEL,
-                    prompt_file=SIGPLAN_AI_PROMPT_FILE,
+                    prompt_file=SIGBOARD_AI_PROMPT_FILE,
                     prefer_cache=prefer_cache,
                 )
 
@@ -4558,7 +4558,7 @@ def menu():
             continue
 
         elif opcao == "x":
-            console.print("\n[bold green]🖖 Encerrando SIGPLAN Tools.[/bold green]")
+            console.print("\n[bold green]🖖 Encerrando SIGBOARD Tools.[/bold green]")
             _limpar_tela()
             break
 
@@ -4569,3 +4569,4 @@ def menu():
 
 if __name__ == "__main__":
     app()
+

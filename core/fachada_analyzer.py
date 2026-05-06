@@ -99,7 +99,7 @@ class FachadaAnalysisResult:
 
 class FachadaAnalyzer:
     """
-    Analisador de fachadas do SIGPLAN.
+    Analisador de fachadas do SIGBOARD.
 
     Entradas suportadas:
     - nome da fachada: ex. FachadaIndicadorBD

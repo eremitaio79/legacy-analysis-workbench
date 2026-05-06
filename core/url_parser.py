@@ -38,7 +38,7 @@ def _extrair_query_util(entrada: str) -> str:
     return texto
 
 
-def parse_sigplan_url(entrada: str) -> Dict:
+def parse_sigboard_url(entrada: str) -> Dict:
     """
     Extrai:
     - action bruta

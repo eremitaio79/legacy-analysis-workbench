@@ -30,46 +30,46 @@ def _norm_path(value: str, fallback: Path | str) -> str:
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 PROMPTS_DIR = PROJECT_ROOT / "prompts"
 
-SIGPLAN_PROJECT_PATH = _norm_path(
-    os.getenv("SIGPLAN_PROJECT_PATH"),
+SIGBOARD_PROJECT_PATH = _norm_path(
+    os.getenv("SIGBOARD_PROJECT_PATH"),
     PROJECT_ROOT / "sample_legacy_app",
 )
 
-SIGPLAN_OUTPUT_DIR = _norm_path(
-    os.getenv("SIGPLAN_OUTPUT_DIR"),
+SIGBOARD_OUTPUT_DIR = _norm_path(
+    os.getenv("SIGBOARD_OUTPUT_DIR"),
     PROJECT_ROOT / "out",
 )
 
-SIGPLAN_REPORT_DIR = os.getenv("SIGPLAN_REPORT_DIR", "reports").strip() or "reports"
-SIGPLAN_DEFAULT_MD_NAME = os.getenv("SIGPLAN_DEFAULT_MD_NAME", "analysis.md").strip() or "analysis.md"
+SIGBOARD_REPORT_DIR = os.getenv("SIGBOARD_REPORT_DIR", "reports").strip() or "reports"
+SIGBOARD_DEFAULT_MD_NAME = os.getenv("SIGBOARD_DEFAULT_MD_NAME", "analysis.md").strip() or "analysis.md"
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
 
-SIGPLAN_AI_PROVIDER = os.getenv("SIGPLAN_AI_PROVIDER", "gemini").strip().lower()
-SIGPLAN_AI_MODEL = os.getenv("SIGPLAN_AI_MODEL", "gemini-2.5-flash").strip()
-SIGPLAN_AI_FALLBACK_MODEL = os.getenv("SIGPLAN_AI_FALLBACK_MODEL", "gemini-2.5-flash-lite").strip()
-SIGPLAN_AI_PROMPT_FILE = os.getenv("SIGPLAN_AI_PROMPT_FILE", "ai_analysis_prompt.txt").strip()
+SIGBOARD_AI_PROVIDER = os.getenv("SIGBOARD_AI_PROVIDER", "gemini").strip().lower()
+SIGBOARD_AI_MODEL = os.getenv("SIGBOARD_AI_MODEL", "gemini-2.5-flash").strip()
+SIGBOARD_AI_FALLBACK_MODEL = os.getenv("SIGBOARD_AI_FALLBACK_MODEL", "gemini-2.5-flash-lite").strip()
+SIGBOARD_AI_PROMPT_FILE = os.getenv("SIGBOARD_AI_PROMPT_FILE", "ai_analysis_prompt.txt").strip()
 
-SIGPLAN_DEFAULT_DEEP = _to_int(os.getenv("SIGPLAN_DEFAULT_DEEP"), 1)
-SIGPLAN_DEFAULT_CONTEXTO = _to_int(os.getenv("SIGPLAN_DEFAULT_CONTEXTO"), 1)
+SIGBOARD_DEFAULT_DEEP = _to_int(os.getenv("SIGBOARD_DEFAULT_DEEP"), 1)
+SIGBOARD_DEFAULT_CONTEXTO = _to_int(os.getenv("SIGBOARD_DEFAULT_CONTEXTO"), 1)
 
-SIGPLAN_AI_CACHE_ENABLED = _to_bool(os.getenv("SIGPLAN_AI_CACHE_ENABLED"), True)
-SIGPLAN_AI_CACHE_DIR = _norm_path(
-    os.getenv("SIGPLAN_AI_CACHE_DIR"),
+SIGBOARD_AI_CACHE_ENABLED = _to_bool(os.getenv("SIGBOARD_AI_CACHE_ENABLED"), True)
+SIGBOARD_AI_CACHE_DIR = _norm_path(
+    os.getenv("SIGBOARD_AI_CACHE_DIR"),
     PROJECT_ROOT / ".cache" / "ai",
 )
 
-SIGPLAN_VERBOSE = _to_bool(os.getenv("SIGPLAN_VERBOSE"), True)
+SIGBOARD_VERBOSE = _to_bool(os.getenv("SIGBOARD_VERBOSE"), True)
 
 # =========================================================
 # Banco de dados
 # =========================================================
 
-SIGPLAN_DB_ACTIVE = os.getenv("SIGPLAN_DB_ACTIVE", "homolog").strip().lower() or "homolog"
-SIGPLAN_DB_DRIVER = os.getenv("SIGPLAN_DB_DRIVER", "ODBC Driver 17 for SQL Server").strip() or "ODBC Driver 17 for SQL Server"
-SIGPLAN_DB_TRUST_CERTIFICATE = _to_bool(os.getenv("SIGPLAN_DB_TRUST_CERTIFICATE"), True)
-SIGPLAN_DB_ENCRYPT = _to_bool(os.getenv("SIGPLAN_DB_ENCRYPT"), False)
-SIGPLAN_DB_TIMEOUT = _to_int(os.getenv("SIGPLAN_DB_TIMEOUT"), 15)
+SIGBOARD_DB_ACTIVE = os.getenv("SIGBOARD_DB_ACTIVE", "homolog").strip().lower() or "homolog"
+SIGBOARD_DB_DRIVER = os.getenv("SIGBOARD_DB_DRIVER", "ODBC Driver 17 for SQL Server").strip() or "ODBC Driver 17 for SQL Server"
+SIGBOARD_DB_TRUST_CERTIFICATE = _to_bool(os.getenv("SIGBOARD_DB_TRUST_CERTIFICATE"), True)
+SIGBOARD_DB_ENCRYPT = _to_bool(os.getenv("SIGBOARD_DB_ENCRYPT"), False)
+SIGBOARD_DB_TIMEOUT = _to_int(os.getenv("SIGBOARD_DB_TIMEOUT"), 15)
 
 
 def _db_env(prefix: str) -> dict:
@@ -81,8 +81,8 @@ def _db_env(prefix: str) -> dict:
     }
 
 
-SIGPLAN_DB_HOMOLOG = _db_env("SIGPLAN_DB_HOMOLOG")
-SIGPLAN_DB_PROD = _db_env("SIGPLAN_DB_PROD")
+SIGBOARD_DB_HOMOLOG = _db_env("SIGBOARD_DB_HOMOLOG")
+SIGBOARD_DB_PROD = _db_env("SIGBOARD_DB_PROD")
 
 
 def get_db_config(environment: str | None = None) -> dict:
@@ -94,13 +94,13 @@ def get_db_config(environment: str | None = None) -> dict:
     - prod
     - production
     """
-    env_name = (environment or SIGPLAN_DB_ACTIVE).strip().lower()
+    env_name = (environment or SIGBOARD_DB_ACTIVE).strip().lower()
 
     if env_name == "homolog":
-        config = SIGPLAN_DB_HOMOLOG
+        config = SIGBOARD_DB_HOMOLOG
         resolved_env = "homolog"
     elif env_name in {"prod", "production", "producao", "produção"}:
-        config = SIGPLAN_DB_PROD
+        config = SIGBOARD_DB_PROD
         resolved_env = "prod"
     else:
         raise ValueError(
@@ -109,10 +109,10 @@ def get_db_config(environment: str | None = None) -> dict:
 
     return {
         "environment": resolved_env,
-        "driver": SIGPLAN_DB_DRIVER,
-        "trust_server_certificate": SIGPLAN_DB_TRUST_CERTIFICATE,
-        "encrypt": SIGPLAN_DB_ENCRYPT,
-        "timeout": SIGPLAN_DB_TIMEOUT,
+        "driver": SIGBOARD_DB_DRIVER,
+        "trust_server_certificate": SIGBOARD_DB_TRUST_CERTIFICATE,
+        "encrypt": SIGBOARD_DB_ENCRYPT,
+        "timeout": SIGBOARD_DB_TIMEOUT,
         **config,
     }
 

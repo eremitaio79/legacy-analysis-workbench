@@ -4,7 +4,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Iterable, List
 
-from core.config import SIGPLAN_OUTPUT_DIR, SIGPLAN_REPORT_DIR
+from core.config import SIGBOARD_OUTPUT_DIR, SIGBOARD_REPORT_DIR
 
 
 class ProcedureWriter:
@@ -14,7 +14,7 @@ class ProcedureWriter:
 
     def __init__(self, output_dir: str | Path | None = None) -> None:
         if output_dir is None:
-            output_dir = Path(SIGPLAN_OUTPUT_DIR) / SIGPLAN_REPORT_DIR
+            output_dir = Path(SIGBOARD_OUTPUT_DIR) / SIGBOARD_REPORT_DIR
 
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)

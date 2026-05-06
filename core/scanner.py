@@ -36,7 +36,7 @@ def encontrar_arquivo_por_nome(path: str, nome_arquivo: str) -> Optional[Path]:
 
 def encontrar_arquivo_da_action(path: str, classe: str) -> Optional[Path]:
     """
-    Tenta localizar o controller/arquivo principal a partir da action/classe do SIGPLAN.
+    Tenta localizar o controller/arquivo principal a partir da action/classe do SIGBOARD.
 
     Exemplos:
     - Indicadorv2 -> Indicadorv2CTR.php

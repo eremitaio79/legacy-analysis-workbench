@@ -12,9 +12,9 @@ from google.genai import types
 
 from core.config import (
     PROMPTS_DIR,
-    SIGPLAN_AI_CACHE_ENABLED,
-    SIGPLAN_AI_CACHE_DIR,
-    SIGPLAN_AI_PROMPT_FILE,
+    SIGBOARD_AI_CACHE_ENABLED,
+    SIGBOARD_AI_CACHE_DIR,
+    SIGBOARD_AI_PROMPT_FILE,
 )
 
 
@@ -74,9 +74,9 @@ class GeminiAnalyzer:
         provider: str = "gemini",
         model: str = DEFAULT_MODEL,
         temperature: float = 0.1,
-        cache_enabled: bool = SIGPLAN_AI_CACHE_ENABLED,
-        cache_dir: str = SIGPLAN_AI_CACHE_DIR,
-        prompt_file: str = SIGPLAN_AI_PROMPT_FILE,
+        cache_enabled: bool = SIGBOARD_AI_CACHE_ENABLED,
+        cache_dir: str = SIGBOARD_AI_CACHE_DIR,
+        prompt_file: str = SIGBOARD_AI_PROMPT_FILE,
     ) -> None:
         self.provider = (provider or "gemini").strip().lower()
         if self.provider != "gemini":

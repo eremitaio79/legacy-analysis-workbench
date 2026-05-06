@@ -1,8 +1,8 @@
-class SigplanToolsError(Exception):
+class SigboardToolsError(Exception):
     """Erro base da aplicação."""
 
 
-class InputValidationError(SigplanToolsError):
+class InputValidationError(SigboardToolsError):
     """Erro de validação de entrada do usuário."""
 
 
@@ -14,13 +14,5 @@ class InvalidOptionError(InputValidationError):
     """Opção de menu inválida."""
 
 
-class OperationCancelledError(SigplanToolsError):
+class OperationCancelledError(SigboardToolsError):
     """Operação cancelada pelo usuário."""
-
-
-class SigplanToolsError(Exception):
-    """Erro base da aplicação."""
-
-
-class InputValidationError(SigplanToolsError):
-    """Erro de validação de entrada do usuário."""
