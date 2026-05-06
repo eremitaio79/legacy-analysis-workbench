@@ -1,0 +1,14 @@
+.env
+.cache/
+.idea/
+__pycache__/
+out/
+output/
+reports/
+knowledge/
+graphml/
+desktop.ini
+*.pyc
+*.pyo
+*.pyd
+*.log
